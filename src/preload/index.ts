@@ -328,10 +328,10 @@ interface PiDesktopAPI {
 
   // Extension UI responses
   ui: {
-    respondSelect(id: string, value: string): void
-    respondConfirm(id: string, confirmed: boolean): void
-    respondInput(id: string, value: string): void
-    respondEditor(id: string, value: string): void
+    respondSelect(id: string, value: string): Promise<unknown>
+    respondConfirm(id: string, confirmed: boolean): Promise<unknown>
+    respondInput(id: string, value: string): Promise<unknown>
+    respondEditor(id: string, value: string): Promise<unknown>
     /**
      * Ask main to (re-)deliver the workspace's held blocking prompt.
      * No-op unless the workspace is active when the flush executes.

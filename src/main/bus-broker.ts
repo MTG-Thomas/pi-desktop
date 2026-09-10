@@ -1,11 +1,5 @@
 import type { PiRpcManager } from './pi-rpc-manager'
-import type {
-  BusEnvelope,
-  BusPostInput,
-  BusSubscription,
-  BusTopic,
-  PiRpcEvent,
-} from '../shared/ipc-contracts'
+import type { BusEnvelope, BusPostInput, BusSubscription, BusTopic, PiRpcEvent } from '../shared/ipc-contracts'
 import { type BusPostResult } from '../shared/ipc-contracts'
 import {
   BUS_MAX_INBOX,
@@ -98,9 +92,7 @@ export function createBusBroker(deps: BusBrokerDeps): BusBroker {
     // Urgent posts steer a working session; everything else waits its turn.
     // Failures here must never break the sender: the inbox + log already hold
     // the envelope, so a dead target just means "unread".
-    const command = envelope.urgent
-      ? { type: 'steer', message }
-      : { type: 'follow_up', message }
+    const command = envelope.urgent ? { type: 'steer', message } : { type: 'follow_up', message }
     void Promise.resolve(target.manager.sendCommand(command)).catch(() => {})
   }
 

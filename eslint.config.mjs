@@ -35,6 +35,21 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
   },
+  // Promise-safety the compiler cannot see. Scoped rollout: Node-side
+  // non-test code, where fire-and-forget around spawn/RPC/file IO bites.
+  // `*.test.ts` is excluded (node:test returns promises by design) and the
+  // renderer keeps the hooks policy below until its effect/handler patterns
+  // get their own pass. resources/ stays on the base rules: those files are
+  // not in any tsconfig project, so there is no type graph to check them with.
+  {
+    files: ['src/{main,preload,shared}/**/*.ts'],
+    ignores: ['**/*.test.ts'],
+    languageOptions: { parserOptions: { projectService: true } },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+    },
+  },
   // Renderer: React with browser globals + Rules of Hooks enforcement.
   {
     files: ['src/renderer/**/*.{ts,tsx}'],

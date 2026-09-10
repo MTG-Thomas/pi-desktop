@@ -239,7 +239,7 @@ function createMainWindow(): BrowserWindow {
   // Open external links in default browser
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://') || url.startsWith('http://')) {
-      shell.openExternal(url)
+      void shell.openExternal(url)
     }
     return { action: 'deny' }
   })
@@ -282,9 +282,9 @@ function createMainWindow(): BrowserWindow {
 
   // Load renderer
   if (DEV_SERVER_URL) {
-    window.loadURL(DEV_SERVER_URL)
+    void window.loadURL(DEV_SERVER_URL)
   } else {
-    window.loadFile(RENDERER_INDEX_PATH)
+    void window.loadFile(RENDERER_INDEX_PATH)
   }
 
   // Dev tools in development
@@ -391,7 +391,7 @@ function createApplicationMenu(): void {
 
 // ─── App Lifecycle ───────────────────────────────────────────────────────────
 
-app.whenReady().then(async () => {
+void app.whenReady().then(async () => {
   if (!externalUserDataDir) {
     await migrateLegacyGuiData({
       appDataDir: app.getPath('appData'),

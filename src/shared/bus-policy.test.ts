@@ -1,11 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import {
-  formatBusInjection,
-  matchesSubscription,
-  mayDeliverAcrossTrust,
-  validateBusPost,
-} from './bus-policy'
+import { formatBusInjection, matchesSubscription, mayDeliverAcrossTrust, validateBusPost } from './bus-policy'
 
 describe('validateBusPost', () => {
   it('accepts a minimal valid post', () => {
@@ -40,10 +35,7 @@ describe('matchesSubscription', () => {
   })
 
   it('narrows on threadId when the subscription sets one', () => {
-    assert.equal(
-      matchesSubscription(envelope, { runtimeId: 'b', topics: ['task.result'], threadId: 't2' }),
-      false,
-    )
+    assert.equal(matchesSubscription(envelope, { runtimeId: 'b', topics: ['task.result'], threadId: 't2' }), false)
   })
 })
 

@@ -161,16 +161,16 @@ const piDesktopStub = {
     },
   },
   ui: {
-    respondSelect: (id: string, _value: string) => {
+    respondSelect: async (id: string, _value: string) => {
       calls.push(`respondSelect:${id}`)
     },
-    respondConfirm: (id: string, _confirmed: boolean) => {
+    respondConfirm: async (id: string, _confirmed: boolean) => {
       calls.push(`respondConfirm:${id}`)
     },
-    respondInput: (id: string, _value: string) => {
+    respondInput: async (id: string, _value: string) => {
       calls.push(`respondInput:${id}`)
     },
-    respondEditor: (id: string, _value: string) => {
+    respondEditor: async (id: string, _value: string) => {
       calls.push(`respondEditor:${id}`)
     },
     flushPendingPrompts: async (workspaceId: string) => {

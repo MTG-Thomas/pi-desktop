@@ -29,7 +29,10 @@ function setup() {
     runtimeFor: (m) => runtimes.find((r) => r.manager === (m as never)) ?? null,
     isTrusted: () => true,
     broadcastEnvelope: (e) => void broadcasted.push(e),
-    newId: (() => { let n = 0; return () => `id-${++n}` })(),
+    newId: (() => {
+      let n = 0
+      return () => `id-${++n}`
+    })(),
     now: () => 0,
   })
   return { a, b, runtimes, broadcasted, broker }
@@ -43,7 +46,7 @@ describe('bus broker', () => {
     assert.equal(result.ok, true)
     assert.equal(b.sent.length, 1)
     assert.equal(a.sent.length, 0)
-    assert.match((b.sent[0].message as string), /\[bus:task\.result thread:t1 from:a\]/)
+    assert.match(b.sent[0].message as string, /\[bus:task\.result thread:t1 from:a\]/)
   })
 
   it('delivers direct posts by runtime id', () => {

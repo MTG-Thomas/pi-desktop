@@ -1,11 +1,6 @@
 import { randomUUID } from 'crypto'
 import { ipcMain, type IpcMainInvokeEvent } from 'electron'
-import {
-  IPC_CHANNELS,
-  type BusPostInput,
-  type BusPostResult,
-  type BusTopic,
-} from '../../shared/ipc-contracts'
+import { IPC_CHANNELS, type BusPostInput, type BusPostResult, type BusTopic } from '../../shared/ipc-contracts'
 import { isBusTopic } from '../../shared/bus-policy'
 import { createBusBroker, type BusBroker, type BusRuntime } from '../bus-broker'
 import { workspaceTrustStore } from '../workspace-trust'
@@ -53,11 +48,14 @@ function parsePostInput(value: unknown): BusPostInput {
 export function createBusRuntimeIndex(ctx: IpcContext) {
   const { workspaceManager } = ctx
   const listRuntimes = (): BusRuntime[] =>
-    workspaceManager.getSessionRuntimes().map((info) => ({
-      runtimeId: info.runtimeId,
-      workspaceId: info.workspaceId,
-      manager: workspaceManager.getPiManager(info.workspaceId),
-    })).filter((r): r is BusRuntime => r.manager !== null)
+    workspaceManager
+      .getSessionRuntimes()
+      .map((info) => ({
+        runtimeId: info.runtimeId,
+        workspaceId: info.workspaceId,
+        manager: workspaceManager.getPiManager(info.workspaceId),
+      }))
+      .filter((r): r is BusRuntime => r.manager !== null)
 
   const isTrusted = (workspaceId: string): boolean => {
     const workspace = workspaceManager.getWorkspaces().find((w) => w.id === workspaceId)
@@ -99,25 +97,19 @@ export function registerBusHandlers(ctx: IpcContext, broker: BusBroker): void {
     return broker.list(limit)
   })
 
-  ipcMain.handle(
-    IPC_CHANNELS.BUS_SUBSCRIBE,
-    async (event: IpcMainInvokeEvent, topics: unknown, threadId: unknown) => {
-      assertTrustedSender(event)
-      if (!isOptionalString(threadId)) throw new Error('threadId must be a string')
-      broker.subscribe(activeSender().runtimeId, parseTopics(topics), threadId ?? undefined)
-      return { ok: true as const }
-    },
-  )
+  ipcMain.handle(IPC_CHANNELS.BUS_SUBSCRIBE, async (event: IpcMainInvokeEvent, topics: unknown, threadId: unknown) => {
+    assertTrustedSender(event)
+    if (!isOptionalString(threadId)) throw new Error('threadId must be a string')
+    broker.subscribe(activeSender().runtimeId, parseTopics(topics), threadId ?? undefined)
+    return { ok: true as const }
+  })
 
-  ipcMain.handle(
-    IPC_CHANNELS.BUS_UNSUBSCRIBE,
-    async (event: IpcMainInvokeEvent, topic: unknown) => {
-      assertTrustedSender(event)
-      if (topic !== undefined && !isBusTopic(topic)) throw new Error(`Unknown topic: ${String(topic)}`)
-      broker.unsubscribe(activeSender().runtimeId, topic as BusTopic | undefined)
-      return { ok: true as const }
-    },
-  )
+  ipcMain.handle(IPC_CHANNELS.BUS_UNSUBSCRIBE, async (event: IpcMainInvokeEvent, topic: unknown) => {
+    assertTrustedSender(event)
+    if (topic !== undefined && !isBusTopic(topic)) throw new Error(`Unknown topic: ${String(topic)}`)
+    broker.unsubscribe(activeSender().runtimeId, topic as BusTopic | undefined)
+    return { ok: true as const }
+  })
 
   ipcMain.handle(IPC_CHANNELS.BUS_SUBSCRIPTIONS, async (event: IpcMainInvokeEvent) => {
     assertTrustedSender(event)

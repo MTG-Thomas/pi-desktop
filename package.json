@@ -40,7 +40,10 @@
     "package:win:nsis": "electron-vite build && electron-builder --win nsis",
     "package:win:portable": "electron-vite build && electron-builder --win portable",
     "package:all": "electron-vite build && electron-builder --linux --mac --win",
-    "postinstall": "node scripts/postinstall.js"
+    "postinstall": "node scripts/postinstall.js",
+    "format": "prettier --write \"src/**/bus-*.ts\" \"pi-bus/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/bus-*.ts\" \"pi-bus/**/*.ts\"",
+    "test": "tsx --test \"src/**/*.test.ts\" \"resources/**/*.test.ts\""
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",
@@ -91,6 +94,7 @@
     "eslint": "^10.6.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.7.0",
+    "prettier": "^3.9.6",
     "tailwindcss": "^4.1.7",
     "tsx": "^4.23.8",
     "typescript": "^5.8.3",
@@ -160,5 +164,8 @@
       "uninstallerIcon": "resources/icons/icon.ico",
       "artifactName": "Pi-Desktop-${version}-${os}-${arch}-setup.${ext}"
     }
+  },
+  "engines": {
+    "node": ">=22.16.0"
   }
 }
