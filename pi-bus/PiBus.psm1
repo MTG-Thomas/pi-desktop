@@ -80,6 +80,7 @@ function New-PiBusSession {
     [string]$Model,
     [string]$Provider,
     [string]$Fork,
+    [string[]]$Extensions,
     [switch]$NoSession
   )
   $cfg = Get-PiBusConfig
@@ -88,6 +89,7 @@ function New-PiBusSession {
   if ($Model) { $body['model'] = $Model }
   if ($Provider) { $body['provider'] = $Provider }
   if ($Fork) { $body['fork'] = $Fork }
+  if ($Extensions) { $body['extensions'] = @($Extensions) }
   if ($NoSession) { $body['noSession'] = $true }
   $json = $body | ConvertTo-Json
   return Invoke-RestMethod -Uri "http://127.0.0.1:$($cfg.port)/session" `

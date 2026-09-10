@@ -6,7 +6,7 @@
   "keywords": ["pi-package"],
   "type": "module",
   "pi": {
-    "extensions": ["./index.ts"],
+    "extensions": ["./index.ts", "./goal-bus/index.ts"],
     "skills": ["./skills/bus"]
   },
   "peerDependencies": {

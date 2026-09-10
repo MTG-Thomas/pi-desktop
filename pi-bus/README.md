@@ -30,7 +30,15 @@ Start-PiBusBroker
 New-PiBusSession -Title 'auth worker' -Model 'opencode-go/muse-spark-1.3-contributor'
 Send-PiBusPrompt -SessionId <id> -Text '...'   # blocking turn
 New-PiBusSession -Title 'helper' -Fork <session-file>  # enroll by fork
+New-PiBusSession -Title 'trial' -Extensions @('npm:pi-agent-goal')  # trial extensions, no global install
 ```
+
+## goal-bus
+
+`goal-bus/` announces Pi-Agent-Goal transitions on the bus: completions as
+`task.result`, new blockers as `op.announce`. See `goal-bus/README.md`.
+Link a goal with the `goal_bus_link` tool; trial verified cache-stable
+prefixes (per-turn input 6729 → ~200–500 tokens as `cacheRead` climbs).
 
 Ownership: the broker owns ONLY sessions it spawned. Never drive a
 harness-owned LIVE thread (interactive TUI, Desktop pane) — fork it or
