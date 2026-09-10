@@ -36,6 +36,12 @@ export function BusInbox(): React.JSX.Element {
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
 
+  // Pull on every mount: boot order between the main bridge backfill and
+  // the first refresh is not guaranteed, and this also heals reconnects.
+  useEffect(() => {
+    void refreshBus()
+  }, [refreshBus])
+
   const threads = useMemo(() => {
     const byKey = new Map<string, BusEnvelope[]>()
     for (const envelope of busEnvelopes) {
