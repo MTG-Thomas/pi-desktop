@@ -37,5 +37,6 @@ unmergeable against upstream `FaqFirebase/pi-desktop` (alpha, fast-moving).
 1. Keep the `upstream`-touching diff small and upstreamable (bus broker,
    promise fixes). Domain work lives in Pi packages (`pi-bus/`), not in main.
 2. Never reformat a file you did not otherwise change.
-3. `git fetch upstream` + rebase before release branches; resolve by keeping
-   upstream's code and re-applying the standard on top.
+3. `git fetch upstream` + rebase before release branches (`upstream/master`
+   is still their default); resolve by keeping upstream's code and
+   re-applying the standard on top.
