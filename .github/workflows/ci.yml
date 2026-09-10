@@ -1,0 +1,86 @@
+name: CI
+
+# Fork gate: every PR and every push to master gets lint + typecheck + unit
+# tests + format check. The release/tag build lives in build.yml and is
+# untouched. Mirrors house style (pinned SHAs, Node 22, cancel superseded).
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        # --ignore-scripts: the postinstall rebuilds node-pty for Electron via
+        # node-gyp, which the ubuntu runner does not need for lint/type/test.
+        # The packaging path in build.yml still runs the full install.
+        run: npm ci --ignore-scripts
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
+      - name: Format check (fork-owned files)
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+  runtime:
+    name: Runtime checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        # Glob file-args (not `find`) — supported on Node 22+. Platform-gated
+        # suites (POSIX fixtures, XDG paths) fail on Windows runners; CI is
+        # ubuntu-only so they run where they were written to run.
+        run: npm test
+
+  validate:
+    name: Validate
+    needs: [static, runtime]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Gates green
+        run: echo "static and runtime checks passed."
