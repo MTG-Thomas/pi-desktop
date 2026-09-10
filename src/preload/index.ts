@@ -60,6 +60,11 @@ import type {
   WorkflowRunDetail,
   WorkflowControlAction,
   WorkflowControlResult,
+  BusEnvelope,
+  BusPostInput,
+  BusPostResult,
+  BusSubscription,
+  BusTopic,
   SessionRuntimeInfo,
   SessionRuntimeCloseResult,
   SessionLaunchTaskOptions,
@@ -278,6 +283,16 @@ interface PiDesktopAPI {
   // Activity stats
   activity: {
     getStats(): Promise<ActivityStatsResult>
+  }
+
+  // Agent bus (inter-session messaging)
+  bus: {
+    post(post: BusPostInput): Promise<BusPostResult>
+    list(limit?: number): Promise<BusEnvelope[]>
+    subscribe(topics: BusTopic[], threadId?: string): Promise<{ ok: true }>
+    unsubscribe(topic?: BusTopic): Promise<{ ok: true }>
+    subscriptions(): Promise<BusSubscription[]>
+    onEnvelope(callback: (envelope: BusEnvelope) => void): () => void
   }
 
   // Dynamic workflow run monitoring
@@ -522,6 +537,19 @@ const api: PiDesktopAPI = {
 
   activity: {
     getStats: () => ipcRenderer.invoke(IPC_CHANNELS.ACTIVITY_GET_STATS),
+  },
+
+  bus: {
+    post: (post) => ipcRenderer.invoke(IPC_CHANNELS.BUS_POST, post),
+    list: (limit) => ipcRenderer.invoke(IPC_CHANNELS.BUS_LIST, limit),
+    subscribe: (topics, threadId) => ipcRenderer.invoke(IPC_CHANNELS.BUS_SUBSCRIBE, topics, threadId),
+    unsubscribe: (topic) => ipcRenderer.invoke(IPC_CHANNELS.BUS_UNSUBSCRIBE, topic),
+    subscriptions: () => ipcRenderer.invoke(IPC_CHANNELS.BUS_SUBSCRIPTIONS),
+    onEnvelope: (callback) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: BusEnvelope) => callback(data)
+      ipcRenderer.on(IPC_CHANNELS.EVENT_BUS, handler)
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.EVENT_BUS, handler)
+    },
   },
 
   workflows: {
