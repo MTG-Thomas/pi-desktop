@@ -115,6 +115,25 @@ describe('bus broker', () => {
     assert.equal(broker.list()[0]?.id, 'file-9')
   })
 
+  it('seeds history without routing or broadcasting', () => {
+    const { b, broker, broadcasted } = setup()
+    broker.subscribe('b', ['op.announce'])
+    broker.seed([
+      {
+        topic: 'op.announce',
+        payload: 'old news',
+        scope: 'global',
+        id: 'file-old',
+        ts: 0,
+        fromRuntimeId: 'headless:box:1',
+        fromWorkspaceId: 'headless',
+      },
+    ])
+    assert.equal(broker.list()[0]?.id, 'file-old')
+    assert.equal(b.sent.length, 0)
+    assert.equal(broadcasted.length, 0)
+  })
+
   it('ignores other tools and unknown topics on the stream', () => {
     const { a, b, broker } = setup()
     broker.attachManager(a as never)

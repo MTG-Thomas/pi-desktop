@@ -59,12 +59,16 @@ export interface BusBridgeLiveSender {
   sessionFile: string | null
 }
 
+/** File lines kept for the startup backfill (append-only, never routed). */
+export const BUS_BRIDGE_SEED_LINES = 200
+
 export interface BusFileBridgeDeps {
   busFilePath(): string
   /** Raw new bytes appended since `position`, plus the new position. */
   readAppended(position: number): { text: string; position: number }
   liveSenders(): BusBridgeLiveSender[]
   ingest(envelope: BusEnvelope): void
+  seed(envelopes: BusEnvelope[]): void
   now(): number
   /** setInterval/clearInterval seam so tests drive ticks manually. */
   setPoll(fn: () => void, ms: number): unknown
@@ -92,10 +96,15 @@ function parseTs(value: unknown, fallback: number): number {
   return fallback
 }
 
-/** Map one file line to a broker envelope, or null when it must be skipped. */
+/**
+ * Map one file line to a broker envelope, or null when it must be skipped.
+ * With `history: true` (startup backfill) the tail-from-now and
+ * owned-sender checks are lifted: backfill only lands in the broker log
+ * for the inbox, it is never routed into sessions.
+ */
 export function fileLineToEnvelope(
   line: FileBusLine,
-  opts: { now: number; startTs: number; live: BusBridgeLiveSender[] },
+  opts: { now: number; startTs: number; live: BusBridgeLiveSender[]; history?: boolean },
 ): BusEnvelope | null {
   if (typeof line.id !== 'string' || line.id === '') return null
   if (!isBusTopic(line.topic)) return null
@@ -103,12 +112,13 @@ export function fileLineToEnvelope(
   if (line.payload.length > BUS_MAX_PAYLOAD_CHARS) return null
 
   const ts = parseTs(line.ts, opts.now)
-  if (ts < opts.startTs - BUS_BRIDGE_START_GRACE_MS) return null
+  if (!opts.history && ts < opts.startTs - BUS_BRIDGE_START_GRACE_MS) return null
 
   const from = asRecord(line.from)
   const pid = typeof from?.pid === 'number' ? from.pid : null
   const sessionFile = typeof from?.sessionFile === 'string' ? from.sessionFile : null
   if (
+    !opts.history &&
     opts.live.some(
       (sender) => (pid !== null && sender.pid === pid) || (sessionFile !== null && sender.sessionFile === sessionFile),
     )
@@ -134,6 +144,34 @@ export function createBusFileBridge(deps: BusFileBridgeDeps): BusFileBridge {
   const startTs = deps.now()
   let position = 0
   let stopped = false
+
+  // One bounded backfill so a fresh app shows recent threads. History only:
+  // parsed leniently, appended to the log, never routed into sessions.
+  try {
+    const full = deps.readAppended(0)
+    position = full.position
+    const lines = full.text.split('\n').filter((raw) => raw.trim() !== '')
+    const seeded: BusEnvelope[] = []
+    for (const raw of lines.slice(-BUS_BRIDGE_SEED_LINES)) {
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(raw)
+      } catch {
+        continue
+      }
+      const envelope = fileLineToEnvelope(asRecord(parsed) ?? {}, {
+        now: startTs,
+        startTs,
+        live: [],
+        history: true,
+      })
+      if (envelope) seeded.push(envelope)
+    }
+    // position sits at EOF now, so the live tail never re-reads these.
+    deps.seed(seeded)
+  } catch {
+    // A missing or unreadable file just means no history yet.
+  }
 
   const poll = (): number => {
     if (stopped) return 0

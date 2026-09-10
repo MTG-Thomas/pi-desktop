@@ -69,9 +69,10 @@ describe('fileLineToEnvelope', () => {
 })
 
 describe('createBusFileBridge', () => {
-  it('tails appended bytes and ingests new entries only', () => {
+  it('backfills history at creation, then tails new entries only', () => {
     let file = `${JSON.stringify(line({ id: 'a' }))}\n`
     const ingested: BusEnvelope[] = []
+    const seeded: BusEnvelope[] = []
     const bridge = createBusFileBridge({
       busFilePath: () => '/tmp/bus.jsonl',
       readAppended: (position) => {
@@ -80,17 +81,21 @@ describe('createBusFileBridge', () => {
       },
       liveSenders: () => [],
       ingest: (envelope) => void ingested.push(envelope),
+      seed: (envelopes) => void seeded.push(...envelopes),
       now: () => NOW,
       setPoll: () => 'timer',
       clearPoll: () => {},
     })
-    assert.equal(bridge.poll(), 1)
+    assert.deepEqual(
+      seeded.map((e) => e.id),
+      ['a'],
+    )
     assert.equal(bridge.poll(), 0)
     file += `${JSON.stringify(line({ id: 'b', payload: 'second' }))}\nnot-json\n`
     assert.equal(bridge.poll(), 1)
     assert.deepEqual(
       ingested.map((e) => e.id),
-      ['a', 'b'],
+      ['b'],
     )
     bridge.stop()
   })
@@ -103,6 +108,7 @@ describe('createBusFileBridge', () => {
       },
       liveSenders: () => [],
       ingest: () => {},
+      seed: () => {},
       now: () => NOW,
       setPoll: () => 'timer',
       clearPoll: () => {},

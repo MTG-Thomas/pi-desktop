@@ -53,6 +53,11 @@ export interface BusBroker {
    * runtime ids it was delivered to (trust-gated; empty is not an error).
    */
   ingest(envelope: BusEnvelope): string[]
+  /**
+   * Seed history into the log (startup backfill). Append-only: no
+   * broadcast, no routing — the inbox picks it up from BUS_LIST.
+   */
+  seed(envelopes: BusEnvelope[]): void
   subscribe(runtimeId: string, topics: BusTopic[], threadId?: string): void
   unsubscribe(runtimeId: string, topic?: BusTopic): void
   subscriptionsFor(runtimeId: string): BusSubscription[]
@@ -178,10 +183,18 @@ export function createBusBroker(deps: BusBrokerDeps): BusBroker {
     return route(envelope)
   }
 
+  const seed = (envelopes: BusEnvelope[]): void => {
+    for (const envelope of envelopes) {
+      log.push(envelope)
+    }
+    if (log.length > BUS_MAX_LOG) log.splice(0, log.length - BUS_MAX_LOG)
+  }
+
   return {
     attachManager,
     post,
     ingest,
+    seed,
     subscribe(runtimeId, topics, threadId) {
       subscriptions.set(runtimeId, { runtimeId, topics: [...topics], threadId })
     },

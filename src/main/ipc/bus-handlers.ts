@@ -143,6 +143,7 @@ export function startBusFileBridge(ctx: IpcContext, broker: BusBroker): BusFileB
         sessionFile: info.sessionPath,
       })),
     ingest: (envelope) => void broker.ingest(envelope),
+    seed: (envelopes) => broker.seed(envelopes),
     now: () => Date.now(),
     setPoll: (fn, ms) => setInterval(fn, ms),
     clearPoll: (handle) => clearInterval(handle as ReturnType<typeof setInterval>),
