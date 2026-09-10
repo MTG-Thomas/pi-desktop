@@ -42,6 +42,17 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev
 
+      - name: Guardrails (no registry-resolved binaries)
+        shell: bash
+        run: |
+          # Binaries in CI must resolve from the lockfile install, never the
+          # registry: npm scripts or ./node_modules/.bin, no npx anywhere.
+          if grep -rnE 'run:.*\bnpx\b' .github/workflows; then
+            echo 'npx is banned in CI workflows'
+            exit 1
+          fi
+          node -e "const s=require('./package.json').scripts || {}; const bad=Object.entries(s).filter(([,v])=>/\\bnpx\\b/.test(v)).map(([k])=>k); if (bad.length) { console.error('npx is banned in npm scripts:', bad.join(', ')); process.exit(1) }"
+
       - name: Format check (fork-owned files)
         run: npm run format:check
 
