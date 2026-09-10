@@ -58,9 +58,14 @@ export function BusInbox(): React.JSX.Element {
 
   const open = threads.find((thread) => thread.key === activeThread) ?? threads[0] ?? null
 
+  // Mark-seen must key off the stable thread key and the unread COUNT, not
+  // the derived thread object: marking seen recomputes the thread list (new
+  // identities), which would re-fire the effect forever and hang the view.
+  const openKey = open?.key ?? null
+  const openUnread = open?.unread ?? 0
   useEffect(() => {
-    if (open) markThreadSeen(open.key)
-  }, [open, markThreadSeen, busEnvelopes.length])
+    if (openKey !== null && openUnread > 0) markThreadSeen(openKey)
+  }, [openKey, openUnread, markThreadSeen])
 
   const selectThread = (key: string): void => {
     setActiveThread(key)
