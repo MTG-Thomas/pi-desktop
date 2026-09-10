@@ -132,6 +132,13 @@ export const IPC_CHANNELS = {
   COUNCIL_RUN_CONSULTANTS: 'council:run-consultants',
   COUNCIL_ARBITER: 'council:arbiter',
 
+  // Agent bus (inter-session messaging)
+  BUS_POST: 'bus:post',
+  BUS_LIST: 'bus:list',
+  BUS_SUBSCRIBE: 'bus:subscribe',
+  BUS_UNSUBSCRIBE: 'bus:unsubscribe',
+  BUS_SUBSCRIPTIONS: 'bus:subscriptions',
+
   // File operations
   FILE_TREE: 'file:tree',
   FILE_SEARCH: 'file:search',
@@ -191,6 +198,7 @@ export const IPC_CHANNELS = {
   EVENT_TERMINAL_DATA: 'event:terminal-data',
   EVENT_TERMINAL_EXIT: 'event:terminal-exit',
   EVENT_COUNCIL_PROGRESS: 'event:council-progress',
+  EVENT_BUS: 'event:bus',
 } as const
 
 // ─── Pi Process Types ───────────────────────────────────────────────────────
@@ -613,6 +621,19 @@ export interface WorkflowRunDetail extends WorkflowRunSummary {
   logs: string[]
   agents: WorkflowAgentDetail[]
 }
+
+// ─── Agent bus ────────────────────────────────────────────────────────────
+
+/** Re-exported here so renderer + main share one definition via contracts. */
+export type {
+  BusEnvelope,
+  BusPostInput,
+  BusScope,
+  BusSubscription,
+  BusTopic,
+} from './bus-policy'
+
+export type BusPostResult = { ok: true; id: string } | { ok: false; error: string }
 
 export interface PiMessageStartEvent {
   type: 'message_start'

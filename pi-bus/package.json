@@ -1,0 +1,14 @@
+{
+  "name": "@wantara/pi-bus",
+  "version": "0.1.0",
+  "description": "Inter-session message bus tools for Pi (pairs with Pi Desktop bus broker)",
+  "license": "AGPL-3.0-only",
+  "keywords": ["pi-package"],
+  "type": "module",
+  "pi": {
+    "extensions": ["./index.ts"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}

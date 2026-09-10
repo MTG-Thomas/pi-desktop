@@ -24,6 +24,7 @@ import { registerSystemHandlers } from './ipc/system-handlers'
 import { registerUpdateHandlers } from './ipc/update-handlers'
 import { registerDiagnosticsHandlers } from './ipc/diagnostics-handlers'
 import { registerWorkflowHandlers } from './ipc/workflow-handlers'
+import { createAppBusBroker, registerBusHandlers } from './ipc/bus-handlers'
 import { wireWorkspaceActivity, type WindowControls } from './ipc/workspace-activity-wiring'
 
 export { loadAppSettings, saveAppSettings } from './ipc/settings'
@@ -67,6 +68,7 @@ export function registerIpcHandlers(
   registerUpdateHandlers()
   registerDiagnosticsHandlers(ctx)
   registerWorkflowHandlers(ctx)
+  registerBusHandlers(ctx, createAppBusBroker(ctx))
 
   // ─── Extension UI Responses and Pi Event Forwarding ─────────────────────
 
