@@ -28,9 +28,9 @@ unmergeable against upstream `FaqFirebase/pi-desktop` (alpha, fast-moving).
   restructuring, not mechanical fixes. Base + hooks rules stand.
 - **Repo-wide prettier**: upstream style (union wrapping, etc.) is not
   prettier-shaped; reformatting = hundreds of cosmetic hunks. `format` /
-  `format:check` cover fork-owned globs only
-  (`src/**/bus-*.ts`, `pi-bus/**/*.ts` — extend the globs as new fork areas
-  land, never reformat upstream files to satisfy them).
+  `format:check` cover fork-owned globs only (`src/**/bus-*.ts[x]`,
+  `pi-bus/**/*.ts` — extend the globs as new fork areas land, never
+  reformat upstream files to satisfy them).
 
 ## Fork-maintenance rules
 

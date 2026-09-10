@@ -54,6 +54,9 @@ import type {
   PendingPromptCounts,
   WorkspaceActivityMap,
   WorkflowRunSummary,
+  BusEnvelope,
+  BusPostResult,
+  BusTopic,
   SessionRuntimeInfo,
   SessionLaunchTaskOptions,
   SessionDeleteResult,
@@ -260,7 +263,7 @@ interface AppState {
   pendingFollowUp: string[]
 
   // UI
-  currentView: 'home' | 'chat' | 'mission-control' | 'settings' | 'sessions' | 'timeline' | 'packages' | 'diff' | 'notes' | 'skills' | 'diagnostics'
+  currentView: 'home' | 'chat' | 'mission-control' | 'settings' | 'sessions' | 'timeline' | 'packages' | 'diff' | 'notes' | 'skills' | 'diagnostics' | 'bus'
   // Scope for the Sessions view: 'current' shows only the active workspace's
   // sessions, 'all' keeps every project's history visible. Entry points set it
   // (sidebar Sessions = current, View all / command palette = all); the panel's
@@ -308,6 +311,13 @@ interface AppState {
   workspaceActivity: WorkspaceActivityMap
   // Dynamic workflow runs read from the extension's persisted run journal.
   workflowRuns: WorkflowRunSummary[]
+  // Agent-bus envelopes, chronological. Seeded from BUS_LIST, extended live
+  // via EVENT_BUS. Covers Desktop-routed posts and headless file-bus posts
+  // (bridged in main); the operator sees everything even when auto-delivery
+  // to sessions is trust-gated.
+  busEnvelopes: BusEnvelope[]
+  // Last-seen envelope ts per thread key, for unread badges.
+  busThreadsSeen: Record<string, number>
   // Extension status entries (setStatus fire-and-forget). Keyed by statusKey.
   extensionStatuses: Record<string, string>
   // Live subagent progress from tool_execution_update events (subagent tool).
@@ -470,6 +480,10 @@ interface AppActions {
   openWorkflowRunsForSession: (sessionId: string) => void
   openWorkflowRunsForWorkspace: (workspaceId: string | null) => void
   refreshWorkflowRuns: () => Promise<void>
+  refreshBus: () => Promise<void>
+  handleBusEnvelope: (envelope: BusEnvelope) => void
+  postBus: (topic: BusTopic, payload: string, threadId?: string) => Promise<BusPostResult>
+  markThreadSeen: (threadKey: string) => void
   requestChatScrollToBottom: () => void
   // Resolves false when a dirty-editor discard was declined (diff pane only).
   setChatSidePanel: (panel: AppState['chatSidePanel']) => Promise<boolean>
@@ -875,6 +889,8 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
   pendingPromptCounts: {},
   workspaceActivity: {},
   workflowRuns: [],
+  busEnvelopes: [],
+  busThreadsSeen: {},
   extensionStatuses: {},
   subagentProgress: [],
   confirmRequest: null,
@@ -1822,6 +1838,28 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
       set({ workflowRuns: [] })
     }
   },
+  refreshBus: async () => {
+    try {
+      const envelopes = await window.piDesktop.bus.list(200)
+      set({ busEnvelopes: [...envelopes].reverse() })
+    } catch {
+      set({ busEnvelopes: [] })
+    }
+  },
+  handleBusEnvelope: (envelope) =>
+    set((state) => ({ busEnvelopes: [...state.busEnvelopes.slice(-299), envelope] })),
+  postBus: async (topic, payload, threadId) => {
+    const result = await window.piDesktop.bus.post(
+      threadId ? { topic, payload, threadId } : { topic, payload },
+    )
+    if (result.ok) {
+      const key = threadId ?? '(broadcast)'
+      set((state) => ({ busThreadsSeen: { ...state.busThreadsSeen, [key]: Date.now() } }))
+    }
+    return result
+  },
+  markThreadSeen: (threadKey) =>
+    set((state) => ({ busThreadsSeen: { ...state.busThreadsSeen, [threadKey]: Date.now() } })),
   requestChatScrollToBottom: () =>
     set((state) => ({ chatScrollBottomNonce: state.chatScrollBottomNonce + 1 })),
   setChatSidePanel: async (panel) => {

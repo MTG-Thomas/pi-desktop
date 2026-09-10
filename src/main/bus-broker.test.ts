@@ -98,6 +98,23 @@ describe('bus broker', () => {
     assert.equal(broker.list().length, 1)
   })
 
+  it('ingests pre-built envelopes for the file bridge', () => {
+    const { b, broker } = setup()
+    broker.subscribe('b', ['op.announce'])
+    const delivered = broker.ingest({
+      topic: 'op.announce',
+      payload: 'from the file',
+      scope: 'global',
+      id: 'file-9',
+      ts: 0,
+      fromRuntimeId: 'headless:box:4242',
+      fromWorkspaceId: 'headless',
+    })
+    assert.deepEqual(delivered, ['a', 'b'])
+    assert.equal(b.sent.length, 1)
+    assert.equal(broker.list()[0]?.id, 'file-9')
+  })
+
   it('ignores other tools and unknown topics on the stream', () => {
     const { a, b, broker } = setup()
     broker.attachManager(a as never)

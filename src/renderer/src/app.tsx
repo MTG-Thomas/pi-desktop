@@ -11,6 +11,7 @@ import { NotesPanel } from './components/notes-panel'
 import { SkillsPanel } from './components/skills-panel'
 import { DiagnosticsPanel } from './components/diagnostics-panel'
 import { MissionControl } from './components/mission-control'
+import { BusInbox } from './components/bus-inbox'
 import { TaskLauncher } from './components/task-launcher'
 import { NotePicker } from './components/note-picker'
 import { CommandPalette } from './components/command-palette'
@@ -154,6 +155,7 @@ export function App(): React.JSX.Element {
               <div className={globalWorkflowOpen ? 'hidden' : 'contents'}>
                 {currentView === 'home' && <HomeScreen />}
                 {currentView === 'mission-control' && <MissionControl />}
+                {currentView === 'bus' && <BusInbox />}
                 {/* Kept mounted (just hidden) so chat drafts and scroll state survive
                     navigating to another view or opening global workflows. */}
                 <div className={currentView === 'chat' ? 'flex min-w-0 flex-1 flex-col overflow-hidden' : 'hidden'}>

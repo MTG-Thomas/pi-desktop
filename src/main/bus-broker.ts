@@ -47,6 +47,12 @@ export interface BusBroker {
   attachManager(manager: PiRpcManager): void
   /** Direct post (renderer BUS_POST, or tests). Sender is explicit. */
   post(from: BusRuntime, input: BusPostInput): BusPostResult
+  /**
+   * Ingest a pre-built envelope (file bridge). The caller owns identity
+   * and validation; the broker appends, broadcasts, and routes. Returns the
+   * runtime ids it was delivered to (trust-gated; empty is not an error).
+   */
+  ingest(envelope: BusEnvelope): string[]
   subscribe(runtimeId: string, topics: BusTopic[], threadId?: string): void
   unsubscribe(runtimeId: string, topic?: BusTopic): void
   subscriptionsFor(runtimeId: string): BusSubscription[]
@@ -167,9 +173,15 @@ export function createBusBroker(deps: BusBrokerDeps): BusBroker {
     manager.on('event', (event: PiRpcEvent) => handleManagerEvent(manager, event))
   }
 
+  const ingest = (envelope: BusEnvelope): string[] => {
+    appendEnvelope(envelope)
+    return route(envelope)
+  }
+
   return {
     attachManager,
     post,
+    ingest,
     subscribe(runtimeId, topics, threadId) {
       subscriptions.set(runtimeId, { runtimeId, topics: [...topics], threadId })
     },

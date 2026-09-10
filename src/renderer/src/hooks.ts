@@ -13,6 +13,8 @@ export function usePiEvents(): void {
   const handlePendingPromptCounts = useAppStore((state) => state.handlePendingPromptCounts)
   const handleWorkspaceActivity = useAppStore((state) => state.handleWorkspaceActivity)
   const handleSessionRuntime = useAppStore((state) => state.handleSessionRuntime)
+  const handleBusEnvelope = useAppStore((state) => state.handleBusEnvelope)
+  const refreshBus = useAppStore((state) => state.refreshBus)
   const recoverPendingPrompts = useAppStore((state) => state.recoverPendingPrompts)
 
   useEffect(() => {
@@ -21,6 +23,8 @@ export function usePiEvents(): void {
     const unsubscribeCounts = window.piDesktop.onPendingPrompts(handlePendingPromptCounts)
     const unsubscribeActivity = window.piDesktop.onWorkspaceActivity(handleWorkspaceActivity)
     const unsubscribeSessionRuntime = window.piDesktop.onSessionRuntime(handleSessionRuntime)
+    const unsubscribeBus = window.piDesktop.bus.onEnvelope(handleBusEnvelope)
+    void refreshBus()
 
     // A desktop-notification click hands the renderer the switch intent so the
     // usual streaming/dirty-editor confirms still run; landing on chat shows
@@ -79,9 +83,10 @@ export function usePiEvents(): void {
       unsubscribeCounts()
       unsubscribeActivity()
       unsubscribeSessionRuntime()
+      unsubscribeBus()
       unsubscribeActivate()
     }
-  }, [handlePiEvent, handlePendingPromptCounts, handleWorkspaceActivity, handleSessionRuntime, recoverPendingPrompts])
+  }, [handlePiEvent, handlePendingPromptCounts, handleWorkspaceActivity, handleSessionRuntime, handleBusEnvelope, refreshBus, recoverPendingPrompts])
 }
 
 /**

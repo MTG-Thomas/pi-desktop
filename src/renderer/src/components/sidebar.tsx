@@ -22,10 +22,12 @@ import {
   Sparkles,
   Stethoscope,
   Pencil,
+  Inbox,
   Workflow as WorkflowIcon,
 } from 'lucide-react'
 import { useMemo, useState, useRef } from 'react'
 import { StatusPopover } from './status-popover'
+import { BUS_BROADCAST_KEY } from './bus-inbox'
 import { useContextMenu, buildSessionContextMenu } from './context-menu'
 import { getSessionEngineLabel, getSessionRowLabels, hasMixedSessionEngines } from './sidebar-session-labels'
 import { ResizeHandle } from './resize-handle'
@@ -65,6 +67,15 @@ export function Sidebar(): React.JSX.Element {
   const openFolderAsWorkspace = useAppStore((state) => state.openFolderAsWorkspace)
   const openWorkflowRunsForSession = useAppStore((state) => state.openWorkflowRunsForSession)
   const openWorkflowRunsForWorkspace = useAppStore((state) => state.openWorkflowRunsForWorkspace)
+  const busEnvelopes = useAppStore((state) => state.busEnvelopes)
+  const busThreadsSeen = useAppStore((state) => state.busThreadsSeen)
+  const busUnreadTotal = useMemo(
+    () =>
+      busEnvelopes.filter(
+        (envelope) => envelope.ts > (busThreadsSeen[envelope.threadId ?? BUS_BROADCAST_KEY] ?? 0),
+      ).length,
+    [busEnvelopes, busThreadsSeen],
+  )
   const setWorkflowPanelOpen = useAppStore((state) => state.setWorkflowPanelOpen)
   const workflowPanelOpen = useAppStore((state) => state.workflowPanelOpen)
   const workflowPanelWorkspaceId = useAppStore((state) => state.workflowPanelWorkspaceId)
@@ -561,6 +572,17 @@ export function Sidebar(): React.JSX.Element {
               title="All background sessions and workflows"
             />
             <SidebarItem
+              icon={<Inbox size={14} />}
+              label="Bus"
+              active={currentView === 'bus'}
+              onClick={() => {
+                setWorkflowPanelOpen(false)
+                setCurrentView('bus')
+              }}
+              title="Agent bus threads from every session"
+              badge={busUnreadTotal > 0 ? busUnreadTotal : undefined}
+            />
+            <SidebarItem
               icon={<WorkflowIcon size={14} />}
               label="Workflows"
               // Only highlighted when THIS project's scope is open, so it never
@@ -995,6 +1017,7 @@ function SidebarItem({
   onClick,
   compact = false,
   title,
+  badge,
 }: {
   icon: React.ReactNode
   label: string
@@ -1002,6 +1025,7 @@ function SidebarItem({
   onClick: () => void
   compact?: boolean
   title?: string
+  badge?: number
 }): React.JSX.Element {
   return (
     <button
@@ -1018,6 +1042,11 @@ function SidebarItem({
     >
       {icon}
       <span className="truncate">{label}</span>
+      {badge !== undefined && (
+        <span className="ml-auto shrink-0 rounded-full bg-accent px-1.5 py-px text-[10px] font-medium text-white">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </button>
   )
 }

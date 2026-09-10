@@ -1,5 +1,7 @@
 import { randomUUID } from 'crypto'
+import { existsSync, readFileSync } from 'node:fs'
 import { ipcMain, type IpcMainInvokeEvent } from 'electron'
+import { createBusFileBridge, defaultBusFilePath, type BusFileBridge } from '../bus-file-bridge'
 import { IPC_CHANNELS, type BusPostInput, type BusPostResult, type BusTopic } from '../../shared/ipc-contracts'
 import { isBusTopic } from '../../shared/bus-policy'
 import { createBusBroker, type BusBroker, type BusRuntime } from '../bus-broker'
@@ -114,6 +116,36 @@ export function registerBusHandlers(ctx: IpcContext, broker: BusBroker): void {
   ipcMain.handle(IPC_CHANNELS.BUS_SUBSCRIPTIONS, async (event: IpcMainInvokeEvent) => {
     assertTrustedSender(event)
     return broker.subscriptionsFor(activeSender().runtimeId)
+  })
+}
+
+/**
+ * Tail the headless file bus into the broker. Started once from
+ * registerIpcHandlers; lives for the app lifetime (quit tears it down).
+ * Reads are position-cursor slices of a small append-only file — plenty for
+ * an 8KB-capped operator bus, no watcher handles to leak.
+ */
+export function startBusFileBridge(ctx: IpcContext, broker: BusBroker): BusFileBridge {
+  return createBusFileBridge({
+    busFilePath: defaultBusFilePath,
+    readAppended: (position) => {
+      const path = defaultBusFilePath()
+      if (!existsSync(path)) return { text: '', position }
+      // Char offsets throughout: byte offsets would desync on multi-byte
+      // payloads. A shorter file means rotation — re-read from the top.
+      const full = readFileSync(path, 'utf-8')
+      if (full.length < position) return { text: full, position: full.length }
+      return { text: full.slice(position), position: full.length }
+    },
+    liveSenders: () =>
+      ctx.workspaceManager.getSessionRuntimes().map((info) => ({
+        pid: ctx.workspaceManager.getPiManager(info.workspaceId)?.getStatus().pid ?? null,
+        sessionFile: info.sessionPath,
+      })),
+    ingest: (envelope) => void broker.ingest(envelope),
+    now: () => Date.now(),
+    setPoll: (fn, ms) => setInterval(fn, ms),
+    clearPoll: (handle) => clearInterval(handle as ReturnType<typeof setInterval>),
   })
 }
 

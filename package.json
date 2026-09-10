@@ -41,8 +41,8 @@
     "package:win:portable": "electron-vite build && electron-builder --win portable",
     "package:all": "electron-vite build && electron-builder --linux --mac --win",
     "postinstall": "node scripts/postinstall.js",
-    "format": "prettier --write \"src/**/bus-*.ts\" \"pi-bus/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/bus-*.ts\" \"pi-bus/**/*.ts\"",
+    "format": "prettier --write \"src/**/bus-*.ts\" \"src/**/bus-*.tsx\" \"pi-bus/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/bus-*.ts\" \"src/**/bus-*.tsx\" \"pi-bus/**/*.ts\"",
     "test": "tsx --test \"src/**/*.test.ts\" \"resources/**/*.test.ts\""
   },
   "dependencies": {
