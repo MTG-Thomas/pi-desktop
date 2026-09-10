@@ -82,7 +82,8 @@ const sessions = new Map();
 function persistSessions() {
   const arr = [...sessions.values()].map((s) => ({
     id: s.id, title: s.title, sessionFile: s.sessionFile, sessionId: s.sessionId,
-    provider: s.provider, model: s.model, sessionDir: s.sessionDir, created: s.created,
+    provider: s.provider, model: s.model, sessionDir: s.sessionDir,
+    extensions: s.extensions, created: s.created,
   }));
   try {
     mkdirSync(BUS_ROOT, { recursive: true });
@@ -173,6 +174,8 @@ function spawnChild(rec, extra = {}) {
   if (extra.model || rec.model) cargs.push("--model", extra.model || rec.model);
   if (extra.title || rec.title) cargs.push("--name", extra.title || rec.title);
   if (extra.noSession || rec.noSession) cargs.push("--no-session");
+  const exts = extra.extensions || rec.extensions || [];
+  for (const e of exts) cargs.push("-e", e);
   // shell:true on win32 so PATH shims (WinGet Links pi.cmd) resolve.
   const child = spawn(PI_BIN, cargs, { stdio: ["pipe", "pipe", "pipe"], shell: process.platform === "win32" });
   child.on("error", (err) => {
@@ -218,6 +221,7 @@ async function spawnSession(opts) {
     id, title: opts.title || id, provider: opts.provider || null, model: opts.model || null,
     sessionDir: opts.sessionDir || null, sessionId: opts.sessionId || null,
     sessionFile: null, noSession: !!opts.noSession,
+    extensions: Array.isArray(opts.extensions) ? opts.extensions : null,
     created: new Date().toISOString(),
     child: null, pid: null, alive: false, buf: "",
     pending: new Map(), events: [], settledWaiters: [],
