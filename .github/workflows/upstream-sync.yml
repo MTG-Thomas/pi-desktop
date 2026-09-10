@@ -1,0 +1,46 @@
+name: Upstream sync
+
+# Keep the fork current with FaqFirebase/pi-desktop. Once a day (plus manual
+# dispatch): fast-forward or merge upstream/master into our main and push.
+# Clean merges land on their own and run the normal CI gate on push; a
+# conflict fails the run instead of forcing anything, which is the signal
+# for a human to resolve it locally and push.
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Merge upstream/master
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge upstream
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git remote add upstream https://github.com/FaqFirebase/pi-desktop.git
+          git fetch upstream master
+          if git merge-base --is-ancestor HEAD upstream/master; then
+            echo 'Already up to date.'
+            exit 0
+          fi
+          git merge --no-edit upstream/master
+          git push origin main
