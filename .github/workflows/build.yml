@@ -41,7 +41,8 @@ jobs:
         # runner version supports, so enumerate files with `find` instead of
         # relying on the shell/runtime to expand the pattern. `resources/` holds
         # the shared permission-rules engine's tests, so include it too.
-        run: npx --no-install tsx --test $(find src resources -name '*.test.ts')
+        # Local .bin, never npx: no registry lookup, byte-identical binary.
+        run: ./node_modules/.bin/tsx --test $(find src resources -name '*.test.ts')
 
   build:
     name: Build (${{ matrix.os }})
@@ -93,7 +94,8 @@ jobs:
 
       - name: Package with electron-builder
         shell: bash
-        run: npx --no-install electron-builder ${{ matrix.eb_args }} --publish never
+        # Local .bin, never npx: no registry lookup, byte-identical binary.
+        run: ./node_modules/.bin/electron-builder ${{ matrix.eb_args }} --publish never
         env:
           # No certificates in alpha — don't attempt to sign the macOS app.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
